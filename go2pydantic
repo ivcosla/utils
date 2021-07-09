@@ -1,0 +1,75 @@
+#!/usr/bin/env python
+
+import sys
+from typing import Tuple
+
+transforms =  {
+    "string": "str",
+    "int8":"int",
+    "int":"int",
+    "[]byte":"bytes",
+    "bool": "bool",
+    "float32": "float",
+    "float":"float"
+}
+
+def convert_ki():
+    pass
+
+def convert_req():
+    def process_name(name: str) -> Tuple[str, bool]:
+        """
+        process_name returns a tuple of
+        (Python Name, Should be Optional)
+        """
+
+        pnames = name.split(",")
+
+        # has omitempty
+        if len(pnames) == 2:
+            return pnames[0], True
+
+        if pnames[0] == "-":
+            return "", False
+
+        return pnames[0], False
+
+
+    def process_type(t: str) -> str:
+        if t in transforms:
+            return transforms[t]
+
+        return t
+
+    for l in sys.stdin:
+        clean_l = l.rstrip()
+        clean_l = clean_l.replace('`', "")
+        clean_l = clean_l.replace('"', "")
+        clean_l = clean_l.replace("json:", "")
+        clean_l = ' '.join(clean_l.split())
+
+        try:
+            # GoName GoType GoJsonTag
+            words = clean_l.split(' ')
+            name, optional = process_name(words[2])
+
+            if optional:
+                print(f"{name}: Optional[{process_type(words[1])}]")
+            else:
+                print(f"{name}: {process_type(words[1])}")
+        except:
+            if l != "\n":
+                print(f"couldnt process original: ({l})")
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Converts Requests and KIs from Go to Pydantic.")
+    parser.add_argument('--ki', help="converts a KI schema", action="store_true")
+    args = parser.parse_args()
+
+    if args.ki:
+        print("proccess ki")
+    else:
+        convert_req()
